@@ -8,48 +8,62 @@ var config = {
 };
 firebase.initializeApp(config);
 var dataRef = firebase.database();
+var trainName;
+var destina;
+var firstTrain;
+var frequen;
+var timeStamp;
+var current;
+var firstTrainTime;
+var firstTrainMilli;
+var timeDiff;
+var eta;
+var etaM;
+var arrivalTime;
+var arrival;
+var time;
 $("#add-train").on("click", function(event) {
     event.preventDefault();
-    var trainName = $('#train-name').val().trim();
-    var destina = $('#destination').val().trim();
-    var firstTrain = $('#first-train').val().trim();
-    var frequen = $('#frequency').val().trim();
-    var timeStamp = firebase.database.ServerValue.TIMESTAMP;
-    var current = moment();
-    var firstTrainTime = moment(firstTrain, "hh:mm").subtract(1, "years");
-    console.log(firstTrainTime);
-
+    trainName = $('#train-name').val().trim();
+    destina = $('#destination').val().trim();
+    firstTrain = $('#first-train').val().trim();
+    frequen = $('#frequency').val().trim();
+    timeStamp = firebase.database.ServerValue.TIMESTAMP;
+    current = moment.now();
     //current time in milliseconds
- /*   var k = Math.round(new Date(firstTrain).getTime()/1000)
-
-
-    console.log(milli)
-
-    console.log(k);*/
-
-      /*  var now = moment.unix(milli/1000).format("hh:mm a");*/
-/*    startDateMilliseconds = Date.parse(startDate);
-*/
-/*    var monthsWorked = Math.floor((today - startDateMilliseconds) / (1000 * 3600 * 24 * 30));
-*/
-/*    var totalBilled = monthlyRate * monthsWorked;
-*/
+    firstTrainTime = moment(firstTrain, "hh:mm");
+    //converts hh:mm (military time format) string to date
+    firstTrainMilli = Date.parse(firstTrainTime);
+    //converts date attribute into milliseconds
+    timeDiff = current - firstTrainMilli;
+    //gets how many milliseconds have passed since first train
+    minutesDiff = timeDiff / (60 * 1000);
+    //converts elapsed time from milliseconds to minutes
+    eta = minutesDiff % frequen;
+    //retrieves number of minutes till next train IMPORTANT
+    etaM = eta * (60 * 1000);
+    //gets eta converted into milliseconds
+    arrivalTime = current + etaM
+    //adds etaM to current time
+    time = new Date(arrivalTime);
+    //converts arrival time in milliseconds to dollars IMPORTANT
     dataRef.ref().push({
         train: trainName,
         destination: destina,
-        first: firstTrain,
         often: frequen,
-        
-    })
-}); 
+        time: time, 
+        eta: eta
 
+    })
+});
 dataRef.ref().on("child_added", function(childSnapshot) {
     var tableRow = $("<tr>");
     tableRow.attr("id", childSnapshot.val().timestamp);
     var tableDataString = "<td>" + childSnapshot.val().train + "</td>" +
         "<td>" + childSnapshot.val().destination + "</td>" +
-        "<td>" + childSnapshot.val().first + "</td>" +
-        "<td>" + childSnapshot.val().often + "</td>" 
-       tableRow.append(tableDataString)
+        "<td>" + childSnapshot.val().often + "</td>" +
+        "<td>" + childSnapshot.val().time + "</td>" +
+        "<td>" + childSnapshot.val().eta + "</td>"
+    tableRow.append(tableDataString)
     $("#schedule-table").append(tableRow);
 });
